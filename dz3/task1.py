@@ -1,22 +1,29 @@
-import subprocess
-import sys
+# Задание 1:
+# Добавить в проект тест по проверке механики работы формы Contact Us на главной странице личного кабинета. 
+# Должно проверятся открытие формы, ввод данных в поля, клик по кнопке и появление всплывающего alert.
 
-def find_text_in_command(command, text):
-    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, encoding="utf-8")
-    result_out = result.stdout
-    if text in result_out:
-        return True
-    else:
-        return False
+import time
+import pytest
+from pageTest import OperationHelper
+username = "tresBian9"
+password = "poloko36"
 
-def getout(cmd):
-    return subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8').stdout
-
-if __name__ == '__main__':
-    try:
-        arguments = sys.argv
-        command = arguments[1]
-        text = arguments[2]
-        find_text_in_command(command, text)
-    except:
-        find_text_in_command('cat /etc/os-release', 'Good night, BEAUTIFUL WORLD!')
+def test_step_1(browser):
+    test_page1 = OperationHelper(browser)
+    test_page1.go_to_site()
+    test_page1.enter_login("tresBian9")
+    test_page1.enter_pswd("poloko36")
+    test_page1.click_button()
+    time.sleep(3)
+#Вход
+    test_page1.click_contact()
+    time.sleep(3)
+#Заполнение полей
+    test_page1.enter_cont_name("tresBian9")
+    test_page1.enter_cont_email("monte@mail.ru")
+    test_page1.enter_cont_text("bon bon")
+    time.sleep(1)
+    test_page1.click_button()
+    time.sleep(1)
+#Проверка всплывающего окна
+    assert test_page1.get_alert_text() == "Форма успешно отправлена!"
