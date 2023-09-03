@@ -1,29 +1,33 @@
-# Задание №1:
-# - Написать функцию на Python, которой передаются в качестве параметров команда и текст. 
-# Функция должна возвращать True, если команда успешно выполнена и текст найден в её выводе 
-# и False в противном случае. Передаваться должна только одна строка, разбиение вывода использовать не нужно.
+# Задание 1.
+# Добавить в задание с REST API ещё один тест, в котором создаётся новый пост, 
+# а потом проверяется его наличие на сервере по полю «описание».
 
-import subprocess
-import sys
+# Подсказка: создание поста выполняется запросом к https://test-stand.gb.ru/api/posts 
+# с передачей параметров title, description, content.
 
-def find_text(command, text):
-    # Функция для поиска текста в выводе команды 
-    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, encoding="utf-8")
-    result_out = result.stdout
-    if text in result_out:
-        print('TRUE')
-    else:
-        print('FAIL')
+import requests
+import yaml
+import pytest
 
-if __name__ == '__main__':
-    # Программа принимает аргументы через командную строку. Пример: python3 hw.py 'ls' 'venv'
-    # Если не будет задан один из параметров, либо NULL, в функцию передаются параметры:
-    # command: 'cat /etc/os-release', 
-    # text: 'Good night, BEAUTIFUL WORLD!'
-    try:
-        arguments = sys.argv
-        command = arguments[1]
-        text = arguments[2]
-        find_text(command, text)
-    except:
-        find_text('cat /etc/os-release', 'Good night, BEAUTIFUL WORLD!')
+with open('config.yaml') as file:
+    data = yaml.safe_load(file)
+
+url1 = data['url1']
+url2 = data['url2']
+website = 'https://test-stand.gb.ru/api/posts'
+username = f'{data["username"]}'
+password = f'{data["password"]}'
+
+
+def token_auth(token):
+    res = requests.get(url=data["url2"],
+                       headers={"X-Auth-Token": token},
+                       params={"owner": "notMe"})
+    content = [item["content"] for item in res.json()['data']]
+    return content
+
+def test_step1(login):
+    assert '' in token_auth(login)
+
+def test_step2(create_new_post):
+    assert 'data_2' in create_new_post
