@@ -1,30 +1,59 @@
-import subprocess
-import sys
+# Задание 1
+# Добавить в проект тесты API, написанные в ходе первого семинара.
+# Доработать эти тесты в едином стиле с тестами UI, добавив логирование и обработку ошибок. 
+# Должен получиться единый тестовый проект.
 
-def find_text_in_command(command, text):
-    # Функция для поиска текста в выводе команды // :param command: Команда в терминале
-    # :param text: Текст для поиска вывода команды
-   
-    result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, encoding="utf-8")
-    result_out = result.stdout
-    if text in result_out:
-        return True
-    else:
-        return False
+from testpage import OperationHelper
+import logging
+import time
+import yaml
 
-def getout(cmd):
-    # Функция для ввода комманды в терминале // :param cmd: Команда в терминале
-    return subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8').stdout
+with open("testdata.yaml") as f:
+    data = yaml.safe_load(f)
+    name = data["username"]
+    paswd = data["password"]
 
-if __name__ == '__main__':
-    # Программа принимает аргументы через командную строку. Пример: python3 hw.py 'ls' 'venv'
-    # Если не будет задан один из параметров, либо NULL, в функцию передаются параметры:
-    # command: 'cat /etc/os-release', 
-    # text: 'Good night, BEAUTIFUL WORLD!'
-    try:
-        arguments = sys.argv
-        command = arguments[1]
-        text = arguments[2]
-        find_text_in_command(command, text)
-    except:
-        find_text_in_command('cat /etc/os-release', 'Good night, BEAUTIFUL WORLD!')
+
+def test_step1(browser):
+    logging.info("Test1 Starting")
+    testpage = OperationHelper(browser)
+    testpage.go_to_site()
+    testpage.enter_login("test")
+    testpage.enter_pass("test")
+    testpage.click_login_button()
+    time.sleep(3)
+    assert testpage.get_error_text() == "401", "Test_1 FAIL"
+
+
+def test_step2(browser):
+    logging.info("Test2 Starting")
+    testpage = OperationHelper(browser)
+    testpage.go_to_site()
+    testpage.enter_login(name)
+    testpage.enter_pass(password)
+    testpage.click_login_button()
+    time.sleep(2)
+    assert testpage.get_profile_text() == f"Hello, {name}", "Test_2 FAIL"
+
+
+def test_step3(browser):
+    logging.info("Test3 Starting")
+    testpage = OperationHelper(browser)
+    testpage.click_to_do_new_post()
+    testpage.enter_title("Hello, world")
+    testpage.enter_description("help")
+    testpage.enter_content("Bye, world")
+    testpage.click_save_post_button()
+    time.sleep(5)
+    assert testpage.get_title_text() == "Hello, world", "Test_3 FAIL"
+
+def test_step4(browser):
+    logging.info("Test4 Starting")
+    testpage = OperationHelper(browser)
+    testpage.click_contact_button()
+    testpage.enter_name("tresBian9")
+    testpage.enter_email("monte@mail.ru")
+    testpage.enter_contact_content("my contact")
+    testpage.contact_us_save_button()
+    time.sleep(3)
+    assert testpage.get_alert_text() == "Form successfully submitted", "Test_4 FAIL"

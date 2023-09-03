@@ -1,61 +1,26 @@
-import pytest
-from task1 import find_text_in_command, getout
-from sshTask import ssh_find_text_in_command, ssh_getout
 import yaml
-import random
-import string
-from datetime import datetime
+import pytest
+from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.firefox import GeckoDriverManager
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 
-with open('config.yaml') as file:
-    data = yaml.safe_load(file)
 
-@pytest.fixture()
-def make_folders_local():
-    return find_text_in_command(f'mkdir {data["folderoutlocal"]}', "")
+with open("testdata.yaml") as f:
+    testdata = yaml.safe_load(f)
+    browser1 = testdata["browser"]
 
-@pytest.fixture()
-def make_folders():
-    return ssh_find_text_in_command(host=str(data["host"]),
-                                    user=str(data["user"]),
-                                    password=str(data["password"]),
-                                    command=f'mkdir {data["folderin"]} {data["folderout"]}',
-                                    text="")
 
-@pytest.fixture()
-def clear_folders():
-    yield
-    ssh_find_text_in_command(host=str(data["host"]),
-                             user=str(data["user"]),
-                             password=str(data["password"]),
-                             command=f'rm -rf {data["folderin"]} {data["folderout"]}',
-                             text="")
+@pytest.fixture(scope="session")
+def browser():
+    if browser1 == "firefox":
+        service = Service(executable_path=GeckoDriverManager().install())
+        options = webdriver.FirefoxOptions()
+        driver = webdriver.Firefox(service=service, options=options)
+    else:
+        service = Service(executable_path=ChromeDriverManager().install())
+        options = webdriver.ChromeOptions()
+        driver = webdriver.Chrome(service=service, options=options)
+    yield driver
+    driver.quit()
 
-@pytest.fixture()
-def clear_folders_local():
-    yield
-    find_text_in_command(f'rm -rf {data["folderoutlocal"]}', "")
-
-@pytest.fixture()
-def make_files():
-    for i in range(data["count"]):
-        filename = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
-        ssh_find_text_in_command(host=str(data["host"]),
-                                 user=str(data["user"]),
-                                 password=str(data["password"]),
-                                 command="cd {}; dd if=/dev/urandom of={} bs={} count=1 iflag=fullblock".format(data["folderin"], filename, data["bs"]),
-                                 text="")
-
-@pytest.fixture(autouse=True)
-def print_time():
-    print("Start: {}".format(datetime.now().strftime("%H:%M:%S.%f")))
-    yield
-    print("\nFinish: {}".format(datetime.now().strftime("%H:%M:%S.%f")))
-
-@pytest.fixture(autouse=True)
-def stat():
-    yield
-    stat = ssh_getout(host=str(data["host"]),
-                      user=str(data["user"]),
-                      password=str(data["password"]),
-                      command="cat /proc/loadavg")
-    find_text_in_command("echo 'time: {} count:{} size: {} load: {}'>> stat.txt".format(datetime.now().strftime("%H:%M:%S.%f"), data["count"], data["bs"], stat), "")
